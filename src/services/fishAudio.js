@@ -1,6 +1,7 @@
 const axios = require('axios');
 const fs = require('fs-extra');
 const path = require('path');
+const ora = require('ora');
 const config = require('../utils/config');
 const logger = require('../utils/logger');
 
@@ -178,31 +179,166 @@ class FishAudioService {
     }
   }
 
-  async generateLongAudio(text, outputPath, options = {}) {
+  async generateAudioFromScriptWithProgress(scriptFilePath, options = {}) {
     const {
-      chunkSize = 4000,
-      overlapSize = 200,
-      referenceId,
-      referenceAudio,
+      outputDir = path.join(process.cwd(), 'output', 'audio'),
+      filename = null,
+      referenceId = null,
+      referenceAudio = null,
       format = 'mp3',
+      chunkSize = 4000,
+      onProgress = null,
       ...audioOptions
     } = options;
 
-    logger.info('Generating long-form audio using chunked approach...');
-    
-    // Split text into chunks with overlap for natural flow
-    const chunks = this.splitTextIntoChunks(text, chunkSize, overlapSize);
-    const tempAudioFiles = [];
-    
-    const spinner = logger.spinner(`Generating ${chunks.length} audio segments...`);
+    logger.info(`Converting script to audio with progress: ${scriptFilePath}`);
 
     try {
+      // Read script content
+      const scriptContent = await fs.readFile(scriptFilePath, 'utf8');
+      
+      if (!scriptContent.trim()) {
+        throw new Error('Script file is empty');
+      }
+
+      // Ensure output directory exists
+      await fs.ensureDir(outputDir);
+
+      // Generate filename if not provided
+      const scriptName = path.basename(scriptFilePath, path.extname(scriptFilePath));
+      let outputFilename;
+      if (filename) {
+        outputFilename = filename.includes('.') ? filename : `${filename}.${format}`;
+      } else {
+        outputFilename = `${scriptName}_audio_${Date.now()}.${format}`;
+      }
+      const outputPath = path.join(outputDir, outputFilename);
+
+      // Send initial progress
+      if (onProgress) {
+        onProgress({
+          type: 'start',
+          textLength: scriptContent.length,
+          message: 'Starting audio generation...'
+        });
+      }
+
+      // Check if script needs to be chunked for very long content
+      if (scriptContent.length > chunkSize) {
+        return await this.generateLongAudio(scriptContent, outputPath, {
+          referenceId,
+          referenceAudio,
+          format,
+          chunkSize,
+          onProgress,
+          ...audioOptions
+        });
+      }
+
+      // For single chunk, send progress update
+      if (onProgress) {
+        onProgress({
+          type: 'single_chunk',
+          preview: scriptContent.substring(0, 100) + (scriptContent.length > 100 ? '...' : ''),
+          message: 'Generating audio...'
+        });
+      }
+
+      // Generate audio for entire script
+      const audioStream = await this.generateAudio(scriptContent, {
+        referenceId,
+        referenceAudio,
+        format,
+        ...audioOptions
+      });
+
+      // Save audio to file
+      const writeStream = fs.createWriteStream(outputPath);
+      audioStream.pipe(writeStream);
+
+      return new Promise((resolve, reject) => {
+        writeStream.on('finish', async () => {
+          try {
+            logger.success(`Audio saved to: ${outputPath}`);
+            
+            // Get file stats
+            const stats = await fs.stat(outputPath);
+            const estimatedDuration = this.estimateAudioDuration(scriptContent);
+            
+            const result = {
+              outputPath,
+              scriptPath: scriptFilePath,
+              fileSize: stats.size,
+              estimatedDuration: estimatedDuration,
+              duration: estimatedDuration,
+              wordCount: scriptContent.split(/\s+/).length,
+              format,
+              generatedAt: new Date()
+            };
+
+            resolve(result);
+          } catch (error) {
+            reject(error);
+          }
+        });
+
+        writeStream.on('error', reject);
+        audioStream.on('error', reject);
+      });
+
+    } catch (error) {
+      logger.error('Script to audio conversion with progress failed:', error.message);
+      throw error;
+    }
+  }
+
+  async generateLongAudio(text, outputPath, options = {}) {
+    const {
+      referenceId = null,
+      referenceAudio = null,
+      format = 'mp3',
+      chunkSize = 4000,
+      onProgress = null,
+      ...audioOptions
+    } = options;
+
+    const spinner = ora('Splitting text into chunks...').start();
+
+    try {
+      // Split text into manageable chunks
+      const chunks = this.splitTextIntoChunks(text, chunkSize);
+      const tempAudioFiles = [];
+
+      spinner.succeed(`Split into ${chunks.length} chunks`);
+
+      if (onProgress) {
+        onProgress({
+          type: 'chunks_created',
+          totalChunks: chunks.length,
+          chunks: chunks.map((chunk, i) => ({
+            index: i,
+            preview: chunk.substring(0, 100) + (chunk.length > 100 ? '...' : ''),
+            length: chunk.length
+          }))
+        });
+      }
+
       // Generate audio for each chunk
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
         const tempPath = outputPath.replace(`.${format}`, `_chunk_${i}.${format}`);
         
         spinner.text = `Generating segment ${i + 1}/${chunks.length}...`;
+        
+        if (onProgress) {
+          onProgress({
+            type: 'chunk_start',
+            chunkIndex: i,
+            totalChunks: chunks.length,
+            chunkPreview: chunk.substring(0, 100) + (chunk.length > 100 ? '...' : ''),
+            progress: Math.round((i / chunks.length) * 100)
+          });
+        }
         
         const audioStream = await this.generateAudio(chunk, {
           referenceId,
@@ -222,9 +358,25 @@ class FishAudioService {
         });
 
         tempAudioFiles.push(tempPath);
+
+        if (onProgress) {
+          onProgress({
+            type: 'chunk_complete',
+            chunkIndex: i,
+            totalChunks: chunks.length,
+            progress: Math.round(((i + 1) / chunks.length) * 90) // 90% for generation, 10% for combining
+          });
+        }
       }
 
       spinner.text = 'Combining audio segments...';
+
+      if (onProgress) {
+        onProgress({
+          type: 'combining',
+          message: 'Combining audio segments...'
+        });
+      }
 
       // Combine all audio chunks (this is a simplified approach)
       // In production, you might want to use ffmpeg for better audio concatenation
@@ -232,7 +384,11 @@ class FishAudioService {
 
       // Clean up temporary files
       for (const tempFile of tempAudioFiles) {
-        await fs.remove(tempFile);
+        try {
+          await fs.remove(tempFile);
+        } catch (cleanupError) {
+          logger.warn(`Failed to clean up temp file: ${tempFile}`);
+        }
       }
 
       spinner.succeed(`Generated long-form audio with ${chunks.length} segments!`);
