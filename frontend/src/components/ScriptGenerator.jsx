@@ -146,7 +146,7 @@ const ScriptGenerator = () => {
                       value={formData.duration}
                       onChange={(e, value) => setFormData({ ...formData, duration: value })}
                       min={1}
-                      max={30}
+                      max={180}
                       step={1}
                       marks={[
                         { value: 1, label: '1min' },
@@ -173,6 +173,7 @@ const ScriptGenerator = () => {
                     >
                       <Option value="educational">📚 Educational</Option>
                       <Option value="entertaining">🎭 Entertaining</Option>
+                      <Option value="conversational">💬 Conversational</Option>
                       <Option value="documentary">🎬 Documentary</Option>
                       <Option value="tutorial">🛠️ Tutorial</Option>
                     </Select>

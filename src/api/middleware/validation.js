@@ -27,16 +27,16 @@ class ValidationMiddleware {
 
     // Duration validation
     if (duration !== undefined) {
-      if (typeof duration !== 'number' || duration < 1 || duration > 120) {
+      if (typeof duration !== 'number' || duration < 1 || duration > 180) {
         errors.push({
           field: 'duration',
-          message: 'Duration must be a number between 1 and 120 minutes'
+          message: 'Duration must be a number between 1 and 180 minutes'
         });
       }
     }
 
     // Style validation
-    const validStyles = ['educational', 'entertaining', 'documentary', 'tutorial'];
+    const validStyles = ['educational', 'entertaining', 'conversational', 'documentary', 'tutorial'];
     if (style && !validStyles.includes(style)) {
       errors.push({
         field: 'style',
