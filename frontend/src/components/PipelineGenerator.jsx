@@ -279,240 +279,324 @@ const PipelineGenerator = () => {
   };
 
   return (
-    <div className="card">
-      <div className="flex items-center gap-3 mb-6">
-        <Zap className="w-6 h-6 text-primary-600" />
-        <h2 className="text-2xl font-bold text-gray-900">Complete Pipeline</h2>
-        <span className="text-sm bg-primary-100 text-primary-800 px-2 py-1 rounded-full">
-          Script + Audio
-        </span>
-      </div>
+    <CssVarsProvider theme={theme}>
+      <Card>
+        <CardContent>
+          <Stack spacing={4}>
+            {/* Header */}
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Box sx={{ p: 1.5, bgcolor: 'warning.100', borderRadius: 'lg' }}>
+                <Zap size={28} className="text-orange-600" />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography level="h2" sx={{ fontWeight: 700 }}>
+                    Complete Pipeline
+                  </Typography>
+                  <Chip variant="soft" color="warning" size="sm" startDecorator={<Sparkles size={14} />}>
+                    Script + Audio
+                  </Chip>
+                </Stack>
+                <Typography level="body-md" sx={{ color: 'text.secondary' }}>
+                  Generate both script and audio in one seamless workflow
+                </Typography>
+              </Box>
+            </Stack>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="topic" className="block text-sm font-medium text-gray-700 mb-2">
-            Topic *
-          </label>
-          <input
-            type="text"
-            id="topic"
-            value={formData.topic}
-            onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-            className="input-field"
-            placeholder="Enter your video topic..."
-            required
-          />
-        </div>
+            <Divider />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
-              Duration (minutes)
-            </label>
-            <input
-              type="number"
-              id="duration"
-              min="1"
-              max="120"
-              value={formData.duration}
-              onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
-              className="input-field"
-            />
-          </div>
+            <form onSubmit={handleSubmit}>
+              <Stack spacing={4}>
+                {/* Topic Input */}
+                <FormControl required>
+                  <FormLabel sx={{ fontWeight: 600 }}>Video Topic</FormLabel>
+                  <Input
+                    value={formData.topic}
+                    onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
+                    placeholder="Enter your video topic (e.g., 'Climate Change Solutions')"
+                    size="lg"
+                    startDecorator={<FileText size={18} />}
+                  />
+                </FormControl>
 
-          <div>
-            <label htmlFor="style" className="block text-sm font-medium text-gray-700 mb-2">
-              Style
-            </label>
-            <select
-              id="style"
-              value={formData.style}
-              onChange={(e) => setFormData({ ...formData, style: e.target.value })}
-              className="select-field"
-            >
-              <option value="educational">Educational</option>
-              <option value="entertaining">Entertaining</option>
-              <option value="documentary">Documentary</option>
-              <option value="tutorial">Tutorial</option>
-            </select>
-          </div>
+                {/* Duration Slider */}
+                <FormControl>
+                  <FormLabel sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Clock size={16} />
+                    Duration: {formData.duration} minutes
+                  </FormLabel>
+                  <Box sx={{ px: 2 }}>
+                    <Slider
+                      value={formData.duration}
+                      onChange={(e, value) => setFormData({ ...formData, duration: value })}
+                      min={1}
+                      max={30}
+                      step={1}
+                      marks={[
+                        { value: 1, label: '1min' },
+                        { value: 5, label: '5min' },
+                        { value: 10, label: '10min' },
+                        { value: 20, label: '20min' },
+                        { value: 30, label: '30min' }
+                      ]}
+                      sx={{ mt: 2 }}
+                    />
+                  </Box>
+                </FormControl>
 
-          <div>
-            <label htmlFor="audience" className="block text-sm font-medium text-gray-700 mb-2">
-              Audience
-            </label>
-            <select
-              id="audience"
-              value={formData.audience}
-              onChange={(e) => setFormData({ ...formData, audience: e.target.value })}
-              className="select-field"
-            >
-              <option value="general">General</option>
-              <option value="children">Children</option>
-              <option value="adults">Adults</option>
-              <option value="professionals">Professionals</option>
-            </select>
-          </div>
+                {/* Content Settings */}
+                <Card variant="soft" sx={{ p: 3 }}>
+                  <Typography level="title-md" sx={{ mb: 2, fontWeight: 600 }}>
+                    📝 Content Settings
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid xs={12} md={4}>
+                      <FormControl>
+                        <FormLabel sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Palette size={16} />
+                          Style
+                        </FormLabel>
+                        <Select
+                          value={formData.style}
+                          onChange={(e, value) => setFormData({ ...formData, style: value })}
+                        >
+                          <Option value="educational">📚 Educational</Option>
+                          <Option value="entertaining">🎭 Entertaining</Option>
+                          <Option value="documentary">🎬 Documentary</Option>
+                          <Option value="tutorial">🛠️ Tutorial</Option>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid xs={12} md={4}>
+                      <FormControl>
+                        <FormLabel sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Users size={16} />
+                          Audience
+                        </FormLabel>
+                        <Select
+                          value={formData.audience}
+                          onChange={(e, value) => setFormData({ ...formData, audience: value })}
+                        >
+                          <Option value="general">👥 General</Option>
+                          <Option value="children">🧒 Children</Option>
+                          <Option value="adults">👨‍💼 Adults</Option>
+                          <Option value="professionals">🎓 Professionals</Option>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid xs={12} md={4}>
+                      <FormControl>
+                        <FormLabel sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <MessageCircle size={16} />
+                          Tone
+                        </FormLabel>
+                        <Select
+                          value={formData.tone}
+                          onChange={(e, value) => setFormData({ ...formData, tone: value })}
+                        >
+                          <Option value="friendly">😊 Friendly</Option>
+                          <Option value="formal">🎩 Formal</Option>
+                          <Option value="casual">😎 Casual</Option>
+                          <Option value="professional">💼 Professional</Option>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  </Grid>
+                </Card>
 
-          <div>
-            <label htmlFor="tone" className="block text-sm font-medium text-gray-700 mb-2">
-              Tone
-            </label>
-            <select
-              id="tone"
-              value={formData.tone}
-              onChange={(e) => setFormData({ ...formData, tone: e.target.value })}
-              className="select-field"
-            >
-              <option value="friendly">Friendly</option>
-              <option value="formal">Formal</option>
-              <option value="casual">Casual</option>
-              <option value="professional">Professional</option>
-            </select>
-          </div>
+                {/* Audio Settings */}
+                <Card variant="soft" sx={{ p: 3 }}>
+                  <Typography level="title-md" sx={{ mb: 2, fontWeight: 600 }}>
+                    🎵 Audio Settings
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid xs={12} md={6}>
+                      <FormControl>
+                        <FormLabel sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Volume2 size={16} />
+                          Audio Format
+                        </FormLabel>
+                        <Select
+                          value={formData.format}
+                          onChange={(e, value) => setFormData({ ...formData, format: value })}
+                        >
+                          <Option value="mp3">🎵 MP3 (Recommended)</Option>
+                          <Option value="wav">🎶 WAV (High Quality)</Option>
+                          <Option value="flac">🎼 FLAC (Lossless)</Option>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <FormControl>
+                        <FormLabel sx={{ fontWeight: 600 }}>Voice Model</FormLabel>
+                        <Select
+                          value={formData.voice}
+                          onChange={(e, value) => setFormData({ ...formData, voice: value })}
+                        >
+                          <Option value="090623498e9843068d8507db5a700f90">🎤 Custom Voice (Default)</Option>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  </Grid>
+                </Card>
 
-          <div>
-            <label htmlFor="format" className="block text-sm font-medium text-gray-700 mb-2">
-              Audio Format
-            </label>
-            <select
-              id="format"
-              value={formData.format}
-              onChange={(e) => setFormData({ ...formData, format: e.target.value })}
-              className="select-field"
-            >
-              <option value="mp3">MP3</option>
-              <option value="wav">WAV</option>
-              <option value="flac">FLAC</option>
-            </select>
-          </div>
+                {/* Generate Button */}
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={loading || !formData.topic.trim()}
+                  loading={loading}
+                  startDecorator={loading ? <Loader2 size={20} className="animate-spin" /> : <Zap size={20} />}
+                  sx={{ 
+                    mt: 2,
+                    background: 'linear-gradient(45deg, #FF6B35, #F7931E)',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #E55A2B, #E8841A)',
+                    }
+                  }}
+                >
+                  {loading ? 'Generating Script & Audio...' : 'Generate Complete Pipeline'}
+                </Button>
+              </Stack>
+            </form>
 
-          <div>
-            <label htmlFor="voice" className="block text-sm font-medium text-gray-700 mb-2">
-              Voice Model
-            </label>
-            <select
-              id="voice"
-              value={formData.voice}
-              onChange={(e) => setFormData({ ...formData, voice: e.target.value })}
-              className="select-field"
-            >
-              <option value="090623498e9843068d8507db5a700f90">Custom Voice (Default)</option>
-            </select>
-          </div>
-        </div>
+            {/* Progress Indicator */}
+            {loading && (
+              <Card variant="soft" color="primary" sx={{ mt: 3 }}>
+                <CardContent>
+                  <ProgressIndicator 
+                    steps={[
+                      { title: 'Analyzing Topic', description: 'Processing your topic and requirements' },
+                      { title: 'Generating Script', description: 'Creating detailed script content' },
+                      { title: 'Processing Text for Audio', description: 'Preparing script for voice synthesis' },
+                      { title: 'Generating Audio', description: 'Converting script to high-quality audio' },
+                      { title: 'Finalizing Files', description: 'Saving script and audio files' }
+                    ]}
+                    currentStep={progress.step}
+                    status={progress.status}
+                    error={error}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
-        <button
-          type="submit"
-          disabled={loading || !formData.topic.trim()}
-          className="btn-primary w-full flex items-center justify-center gap-2"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Generating Script & Audio...
-            </>
-          ) : (
-            <>
-              <Zap className="w-4 h-4" />
-              Generate Script & Audio
-            </>
-          )}
-        </button>
-      </form>
+            {/* Error Display */}
+            {error && !loading && (
+              <Alert color="danger" variant="soft" sx={{ mt: 3 }}>
+                <Typography level="body-md">{error}</Typography>
+              </Alert>
+            )}
 
-      {loading && (
-        <div className="mt-6">
-          <ProgressIndicator 
-            steps={[
-              { title: 'Analyzing Topic', description: 'Processing your topic and requirements' },
-              { title: 'Generating Script', description: 'Creating detailed script content' },
-              { title: 'Processing Text for Audio', description: 'Preparing script for voice synthesis' },
-              { title: 'Generating Audio', description: 'Converting script to high-quality audio' },
-              { title: 'Finalizing Files', description: 'Saving script and audio files' }
-            ]}
-            currentStep={progress.step}
-            status={progress.status}
-            error={error}
-          />
-        </div>
-      )}
+            {/* Success Results */}
+            {result && (
+              <Alert color="success" variant="soft" sx={{ mt: 3 }}>
+                <Stack spacing={3}>
+                  <Typography level="title-md" sx={{ fontWeight: 600 }}>
+                    🎉 Pipeline Completed Successfully!
+                  </Typography>
+                  
+                  <Grid container spacing={2}>
+                    {/* Script Details */}
+                    <Grid xs={12} md={6}>
+                      <Card variant="outlined">
+                        <CardContent>
+                          <Typography level="title-sm" sx={{ mb: 2, fontWeight: 600 }}>
+                            📄 Script Generated
+                          </Typography>
+                          <Stack spacing={1}>
+                            <Typography level="body-sm">
+                              <strong>File:</strong> {result.script?.scriptPath}
+                            </Typography>
+                            <Typography level="body-sm">
+                              <strong>Duration:</strong> {result.script?.estimatedDuration} minutes
+                            </Typography>
+                            <Typography level="body-sm">
+                              <strong>Words:</strong> {result.script?.wordCount}
+                            </Typography>
+                          </Stack>
+                          
+                          {/* Script Preview */}
+                          {result.script?.content && (
+                            <Box sx={{ mt: 2 }}>
+                              <Typography level="body-sm" sx={{ fontWeight: 600, mb: 1 }}>
+                                Preview:
+                              </Typography>
+                              <Card variant="soft" sx={{ p: 2, maxHeight: 120, overflow: 'auto' }}>
+                                <Typography level="body-xs" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                                  {result.script.content.substring(0, 300)}...
+                                </Typography>
+                              </Card>
+                            </Box>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Grid>
 
-      {error && !loading && (
-        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-800">{error}</p>
-        </div>
-      )}
+                    {/* Audio Details */}
+                    <Grid xs={12} md={6}>
+                      <Card variant="outlined">
+                        <CardContent>
+                          <Typography level="title-sm" sx={{ mb: 2, fontWeight: 600 }}>
+                            🎵 Audio Generated
+                          </Typography>
+                          <Stack spacing={1}>
+                            <Typography level="body-sm">
+                              <strong>File:</strong> {result.audio?.outputPath}
+                            </Typography>
+                            <Typography level="body-sm">
+                              <strong>Duration:</strong> {result.audio?.estimatedDuration} minutes
+                            </Typography>
+                            <Typography level="body-sm">
+                              <strong>Size:</strong> {formatFileSize(result.audio?.fileSize || 0)}
+                            </Typography>
+                          </Stack>
+                          
+                          {/* Audio Preview */}
+                          {result.audio?.outputPath && (
+                            <Box sx={{ mt: 2 }}>
+                              <Typography level="body-sm" sx={{ fontWeight: 600, mb: 1 }}>
+                                Preview:
+                              </Typography>
+                              <audio 
+                                controls 
+                                style={{ width: '100%' }}
+                                src={`/api/download/audio/${result.audio.outputPath.split('/').pop()}`}
+                              >
+                                Your browser does not support the audio element.
+                              </audio>
+                            </Box>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  </Grid>
 
-      {result && (
-        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <h3 className="font-semibold text-green-800 mb-2">Pipeline Completed Successfully!</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            {/* Script Details */}
-            <div className="bg-white p-3 rounded border">
-              <h4 className="font-medium text-gray-900 mb-2">Script Generated</h4>
-              <div className="space-y-1 text-sm text-gray-600">
-                <p><strong>File:</strong> {result.script?.scriptPath}</p>
-                <p><strong>Duration:</strong> {result.script?.estimatedDuration} minutes</p>
-                <p><strong>Words:</strong> {result.script?.wordCount}</p>
-              </div>
-              
-              {/* Script Preview */}
-              {result.script?.content && (
-                <div className="mt-3">
-                  <h5 className="font-medium text-gray-800 mb-1">Preview:</h5>
-                  <div className="bg-gray-50 p-2 rounded text-xs max-h-32 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap">{result.script.content.substring(0, 300)}...</pre>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Audio Details */}
-            <div className="bg-white p-3 rounded border">
-              <h4 className="font-medium text-gray-900 mb-2">Audio Generated</h4>
-              <div className="space-y-1 text-sm text-gray-600">
-                <p><strong>File:</strong> {result.audio?.outputPath}</p>
-                <p><strong>Duration:</strong> {result.audio?.estimatedDuration} minutes</p>
-                <p><strong>Size:</strong> {result.audio?.fileSize} bytes</p>
-              </div>
-              
-              {/* Audio Preview */}
-              {result.audio?.outputPath && (
-                <div className="mt-3">
-                  <h5 className="font-medium text-gray-800 mb-1">Preview:</h5>
-                  <audio 
-                    controls 
-                    className="w-full"
-                    src={`/api/download/audio/${result.audio.outputPath.split('/').pop()}`}
-                  >
-                    Your browser does not support the audio element.
-                  </audio>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={downloadScript}
-              className="btn-primary"
-            >
-              <Download className="w-4 h-4" />
-              Download Script
-            </button>
-            <button
-              onClick={downloadAudio}
-              className="btn-secondary"
-            >
-              <Download className="w-4 h-4" />
-              Download Audio
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+                  {/* Download Buttons */}
+                  <Stack direction="row" spacing={2}>
+                    <Button
+                      onClick={downloadScript}
+                      startDecorator={<Download size={16} />}
+                      variant="solid"
+                      color="primary"
+                    >
+                      Download Script
+                    </Button>
+                    <Button
+                      onClick={downloadAudio}
+                      startDecorator={<Download size={16} />}
+                      variant="outlined"
+                      color="primary"
+                    >
+                      Download Audio
+                    </Button>
+                  </Stack>
+                </Stack>
+              </Alert>
+            )}
+          </Stack>
+        </CardContent>
+      </Card>
+    </CssVarsProvider>
   );
 };
 
