@@ -1,11 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Bot, FileText, Volume2, Zap, Files, BarChart3, Wifi, WifiOff } from 'lucide-react';
+import { Bot, FileText, Volume2, Zap, Files, BarChart3, Wifi, WifiOff, Sparkles } from 'lucide-react';
 import ScriptGenerator from './components/ScriptGenerator';
 import AudioGenerator from './components/AudioGenerator';
 import PipelineGenerator from './components/PipelineGenerator';
 import FileManager from './components/FileManager';
 import { apiService } from './services/api';
 import { CssVarsProvider } from '@mui/joy/styles';
+import { 
+  Box, 
+  Container, 
+  Typography, 
+  Tabs, 
+  TabList, 
+  Tab, 
+  TabPanel,
+  Card,
+  CardContent,
+  Stack,
+  Chip,
+  Alert,
+  Divider
+} from '@mui/joy';
 import theme from './theme';
 
 function App() {
