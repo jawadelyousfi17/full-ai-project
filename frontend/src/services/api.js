@@ -31,14 +31,29 @@ const pollJobStatus = (jobId, onProgress, resolve, reject, clearJobId) => {
       if (jobData.success) {
         const job = jobData.data;
         
-        // Send progress update
+        // Send progress update with more detailed information
         if (onProgress) {
+          let progressMessage = `Job ${job.status} (${job.progress}%)`;
+          
+          // Provide more detailed messages based on status
+          if (job.status === 'chunk_start' && job.chunkIndex !== undefined) {
+            progressMessage = `Processing audio chunk ${job.chunkIndex + 1} of ${job.totalChunks || 'unknown'}`;
+          } else if (job.status === 'chunk_complete' && job.chunkIndex !== undefined) {
+            progressMessage = `Completed audio chunk ${job.chunkIndex + 1} of ${job.totalChunks || 'unknown'} (${job.progress}%)`;
+          } else if (job.status === 'combining') {
+            progressMessage = `Combining ${job.totalChunks || 'audio'} segments into final file...`;
+          } else if (job.status === 'chunks_created') {
+            progressMessage = `Split into ${job.totalChunks} segments`;
+          }
+          
           onProgress({
-            type: 'polling_update',
+            type: job.status || 'polling_update',
             jobId: job.id,
             status: job.status,
             progress: job.progress,
-            message: `Reconnected - Job ${job.status} (${job.progress}%)`
+            message: progressMessage,
+            chunkIndex: job.chunkIndex,
+            totalChunks: job.totalChunks
           });
         }
         
@@ -122,7 +137,8 @@ const apiService = {
         method: 'POST',
         headers: {
           'Accept': 'text/event-stream',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
         },
         body: JSON.stringify(data)
       })
@@ -143,22 +159,28 @@ const apiService = {
         function readStream() {
           return reader.read().then(({ done, value }) => {
             if (done) {
-              console.log('📡 Stream ended');
+              console.log('📡 Stream ended - checking if we have a job to poll');
+              // If stream ends but we have a job ID, start polling
+              if (currentJobId) {
+                console.log('🔄 Stream ended, switching to polling for job:', currentJobId);
+                pollJobStatus(currentJobId, onProgress, resolve, reject, clearJobId);
+              }
               return;
             }
 
-            const chunk = decoder.decode(value);
+            const chunk = decoder.decode(value, { stream: true });
             console.log('📦 Received chunk:', chunk);
             const lines = chunk.split('\n');
 
             for (const line of lines) {
-              if (line.startsWith('data: ')) {
+              if (line.trim() && line.startsWith('data: ')) {
                 try {
                   const progressData = JSON.parse(line.slice(6));
-                  console.log('📊 Progress data:', progressData);
+                  console.log('📊 Progress data received:', progressData);
                   
                   // Store job ID when received
                   if (progressData.jobId && !currentJobId) {
+                    console.log('💾 Storing job ID from progress:', progressData.jobId);
                     storeJobId(progressData.jobId);
                   }
                   
@@ -173,6 +195,7 @@ const apiService = {
                     reject(new Error(progressData.error));
                     return;
                   } else if (onProgress) {
+                    console.log('📤 Calling onProgress with:', progressData.type);
                     onProgress(progressData);
                   }
                 } catch (e) {
@@ -182,6 +205,15 @@ const apiService = {
             }
 
             return readStream();
+          }).catch(streamError => {
+            console.error('📡 Stream reading error:', streamError);
+            // If we have a job ID, try polling
+            if (currentJobId) {
+              console.log('🔄 Stream error, switching to polling for job:', currentJobId);
+              pollJobStatus(currentJobId, onProgress, resolve, reject, clearJobId);
+            } else {
+              reject(streamError);
+            }
           });
         }
 
@@ -382,6 +414,29 @@ const apiService = {
 
   async getStats() {
     const response = await api.get('/api/stats');
+    return response.data;
+  },
+
+  // Pipeline management
+  async getPipelines(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await api.get(`/api/pipelines${queryString ? '?' + queryString : ''}`);
+    return response.data;
+  },
+
+  async getPipeline(id) {
+    const response = await api.get(`/api/pipelines/${id}`);
+    return response.data;
+  },
+
+  async deletePipeline(id, deleteFiles = false) {
+    const params = deleteFiles ? '?deleteFiles=true' : '';
+    const response = await api.delete(`/api/pipelines/${id}${params}`);
+    return response.data;
+  },
+
+  async getPipelineStats() {
+    const response = await api.get('/api/pipelines/stats/overview');
     return response.data;
   },
 };

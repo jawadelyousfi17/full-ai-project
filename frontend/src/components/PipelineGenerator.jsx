@@ -188,8 +188,12 @@ const PipelineGenerator = () => {
           case 'chunk_complete':
           case 'single_chunk':
           case 'combining':
+          case 'polling_update':
+            setCurrentStep(2);
             setProgressSteps(prev => prev.map((step, i) => ({
               ...step,
+              status: i < 2 ? 'complete' : i === 2 ? 'active' : 'pending',
+              label: i === 2 ? 'Generating audio...' : step.label,
               details: i === 2 ? 
                 progressData.message || `Audio progress: ${progressData.progress || 0}%` : 
                 step.details
@@ -323,7 +327,76 @@ const PipelineGenerator = () => {
               <Stack spacing={4}>
                 {/* Topic Input */}
                 <FormControl required>
-                  <FormLabel sx={{ fontWeight: 600 }}>Video Topic</FormLabel>
+                  <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+                    <FormLabel sx={{ fontWeight: 600, flex: 1 }}>Video Topic</FormLabel>
+                    
+                    {/* Generate Button with Progress */}
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={loading || !formData.topic.trim()}
+                      startDecorator={loading ? <Loader2 size={16} className="animate-spin" style={{ color: 'currentColor' }} /> : <Zap size={16} />}
+                      sx={{ 
+                        minWidth: '140px',
+                        background: 'linear-gradient(135deg, var(--joy-palette-warning-500), var(--joy-palette-warning-600))',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, var(--joy-palette-warning-600), var(--joy-palette-warning-700))'
+                        }
+                      }}
+                    >
+                      {loading ? 'Generating...' : 'Generate Pipeline'}
+                    </Button>
+                  </Stack>
+                  
+                  {/* Real-time Progress Display */}
+                  {loading && progressSteps.length > 0 && (
+                    <Box sx={{ 
+                      mb: 2, 
+                      p: 2, 
+                      bgcolor: 'warning.50', 
+                      borderRadius: 'md',
+                      border: '1px solid',
+                      borderColor: 'warning.200'
+                    }}>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Loader2 size={16} className="animate-spin" style={{ color: 'var(--joy-palette-warning-600)' }} />
+                        <Stack spacing={0.5} sx={{ flex: 1 }}>
+                          <Typography level="body-sm" sx={{ fontWeight: 600, color: 'warning.700' }}>
+                            Pipeline Generation Progress
+                          </Typography>
+                          {progressSteps.map((step, index) => (
+                            step.status === 'active' && (
+                              <Stack key={index} spacing={0.5}>
+                                <Typography 
+                                  level="body-xs" 
+                                  sx={{ 
+                                    color: 'warning.700',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem'
+                                  }}
+                                >
+                                  {step.label}
+                                </Typography>
+                                {step.details && (
+                                  <Typography 
+                                    level="body-xs" 
+                                    sx={{ 
+                                      color: 'warning.600',
+                                      fontFamily: 'monospace',
+                                      fontSize: '0.7rem'
+                                    }}
+                                  >
+                                    {step.details}
+                                  </Typography>
+                                )}
+                              </Stack>
+                            )
+                          ))}
+                        </Stack>
+                      </Stack>
+                    </Box>
+                  )}
+                  
                   <Input
                     value={formData.topic}
                     onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
@@ -454,45 +527,8 @@ const PipelineGenerator = () => {
                   </Grid>
                 </Card>
 
-                {/* Generate Button */}
-                <Button
-                  type="submit"
-                  size="lg"
-                  disabled={loading || !formData.topic.trim()}
-                  loading={loading}
-                  startDecorator={loading ? <Loader2 size={20} className="animate-spin" style={{ color: 'currentColor' }} /> : <Zap size={20} />}
-                  sx={{ 
-                    mt: 2,
-                    background: 'linear-gradient(45deg, #FF6B35, #F7931E)',
-                    '&:hover': {
-                      background: 'linear-gradient(45deg, #E55A2B, #E8841A)',
-                    }
-                  }}
-                >
-                  {loading ? 'Generating Script & Audio...' : 'Generate Complete Pipeline'}
-                </Button>
               </Stack>
             </form>
-
-            {/* Progress Indicator */}
-            {loading && (
-              <Card variant="soft" color="primary" sx={{ mt: 3 }}>
-                <CardContent>
-                  <ProgressIndicator 
-                    steps={[
-                      { title: 'Analyzing Topic', description: 'Processing your topic and requirements' },
-                      { title: 'Generating Script', description: 'Creating detailed script content' },
-                      { title: 'Processing Text for Audio', description: 'Preparing script for voice synthesis' },
-                      { title: 'Generating Audio', description: 'Converting script to high-quality audio' },
-                      { title: 'Finalizing Files', description: 'Saving script and audio files' }
-                    ]}
-                    currentStep={progress.step}
-                    status={progress.status}
-                    error={error}
-                  />
-                </CardContent>
-              </Card>
-            )}
 
             {/* Error Display */}
             {error && !loading && (

@@ -145,6 +145,19 @@ const AudioGenerator = () => {
           console.log('Storing job ID:', progressData.jobId);
           localStorage.setItem('currentAudioJob', progressData.jobId);
         }
+        
+        // Handle polling updates and all progress types that should show chunk progress
+        if (progressData.type === 'polling_update' || progressData.type === 'chunk_start' || progressData.type === 'chunk_complete' || progressData.type === 'single_chunk') {
+          setCurrentStep(2);
+          setProgressSteps(prev => prev.map((step, i) => ({
+            ...step,
+            status: i < 2 ? 'complete' : i === 2 ? 'active' : 'pending',
+            label: i === 2 ? 'Generating audio...' : step.label,
+            details: i === 2 ? progressData.message : step.details
+          })));
+          return;
+        }
+        
         switch (progressData.type) {
           case 'start':
             setCurrentStep(0);
@@ -307,7 +320,76 @@ const AudioGenerator = () => {
               <Stack spacing={3}>
                 {/* Text Input */}
                 <FormControl>
-                  <FormLabel>Text to Convert</FormLabel>
+                  <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+                    <FormLabel sx={{ flex: 1 }}>Text to Convert</FormLabel>
+                    
+                    {/* Generate Button with Progress */}
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={loading || !formData.text.trim()}
+                      startDecorator={loading ? <Loader2 size={16} className="animate-spin" style={{ color: 'currentColor' }} /> : <Volume2 size={16} />}
+                      sx={{ 
+                        minWidth: '140px',
+                        background: 'linear-gradient(135deg, var(--joy-palette-primary-500), var(--joy-palette-primary-600))',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, var(--joy-palette-primary-600), var(--joy-palette-primary-700))'
+                        }
+                      }}
+                    >
+                      {loading ? 'Generating...' : 'Generate Audio'}
+                    </Button>
+                  </Stack>
+                  
+                  {/* Real-time Progress Display */}
+                  {loading && progressSteps.length > 0 && (
+                    <Box sx={{ 
+                      mb: 2, 
+                      p: 2, 
+                      bgcolor: 'primary.50', 
+                      borderRadius: 'md',
+                      border: '1px solid',
+                      borderColor: 'primary.200'
+                    }}>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Loader2 size={16} className="animate-spin" style={{ color: 'var(--joy-palette-primary-600)' }} />
+                        <Stack spacing={0.5} sx={{ flex: 1 }}>
+                          <Typography level="body-sm" sx={{ fontWeight: 600, color: 'primary.700' }}>
+                            Audio Generation Progress
+                          </Typography>
+                          {progressSteps.map((step, index) => (
+                            step.status === 'active' && (
+                              <Stack key={index} spacing={0.5}>
+                                <Typography 
+                                  level="body-xs" 
+                                  sx={{ 
+                                    color: 'primary.700',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem'
+                                  }}
+                                >
+                                  {step.label}
+                                </Typography>
+                                {step.details && (
+                                  <Typography 
+                                    level="body-xs" 
+                                    sx={{ 
+                                      color: 'primary.600',
+                                      fontFamily: 'monospace',
+                                      fontSize: '0.7rem'
+                                    }}
+                                  >
+                                    {step.details}
+                                  </Typography>
+                                )}
+                              </Stack>
+                            )
+                          ))}
+                        </Stack>
+                      </Stack>
+                    </Box>
+                  )}
+                  
                   <Textarea
                     value={formData.text}
                     onChange={(e) => setFormData({ ...formData, text: e.target.value })}
@@ -342,36 +424,8 @@ const AudioGenerator = () => {
                   </FormControl>
                 </Stack>
 
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  size="lg"
-                  disabled={loading || !formData.text.trim()}
-                  loading={loading}
-                  startDecorator={loading ? <Loader2 size={20} className="animate-spin" style={{ color: 'currentColor' }} /> : <Volume2 size={20} />}
-                  sx={{ mt: 2 }}
-                >
-                  {loading ? 'Generating Audio...' : 'Generate Audio'}
-                </Button>
               </Stack>
             </form>
-
-            {/* Progress Indicator */}
-            {loading && (
-              <Box sx={{ mt: 3 }}>
-                <ProgressIndicator 
-                  steps={[
-                    { title: 'Processing Text', description: 'Analyzing text content and structure' },
-                    { title: 'Voice Synthesis', description: 'Converting text to speech using AI voice' },
-                    { title: 'Audio Processing', description: 'Optimizing audio quality and format' },
-                    { title: 'Saving Audio File', description: 'Finalizing and saving the audio file' }
-                  ]}
-                  currentStep={progress.step}
-                  status={progress.status}
-                  error={error}
-                />
-              </Box>
-            )}
 
             {/* Error Display */}
             {error && !loading && (

@@ -1,20 +1,19 @@
-const express = require('express');
-const cors = require('cors');
 const fs = require('fs-extra');
 const path = require('path');
+const cors = require('cors');
+const express = require('express');
+const ScriptWriter = require('../services/scriptWriter');
+const FishAudioService = require('../services/fishAudio');
 const ValidationMiddleware = require('./middleware/validation');
 const logger = require('../utils/logger');
-
-// Import services directly
-const ScriptWriter = require('../services/scriptWriter');
-const FishAudio = require('../services/fishAudio');
+const { Pipeline } = require('../database/models');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Initialize services
 const scriptWriter = new ScriptWriter();
-const fishAudio = new FishAudio();
+const fishAudio = new FishAudioService();
 
 // Middleware
 app.use(cors());
@@ -34,6 +33,119 @@ app.get('/health', (req, res) => {
       fishAudio: !!fishAudio
     }
   });
+});
+
+// Pipeline management endpoints
+app.get('/api/pipelines', async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search, status, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    
+    // Build query
+    const query = {};
+    if (search) {
+      query.$text = { $search: search };
+    }
+    if (status) {
+      query.status = status;
+    }
+    
+    // Build sort
+    const sort = {};
+    sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    
+    const skip = (page - 1) * limit;
+    
+    const pipelines = await Pipeline.find(query)
+      .sort(sort)
+      .skip(skip)
+      .limit(parseInt(limit))
+      .select('-script.content'); // Exclude large content field from list
+    
+    const total = await Pipeline.countDocuments(query);
+    
+    res.json({
+      success: true,
+      data: {
+        pipelines,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Error fetching pipelines:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/pipelines/:id', async (req, res) => {
+  try {
+    const pipeline = await Pipeline.findById(req.params.id);
+    if (!pipeline) {
+      return res.status(404).json({ success: false, error: 'Pipeline not found' });
+    }
+    
+    // Increment view count
+    await pipeline.incrementViewCount();
+    
+    res.json({
+      success: true,
+      data: pipeline
+    });
+  } catch (error) {
+    logger.error('Error fetching pipeline:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.delete('/api/pipelines/:id', async (req, res) => {
+  try {
+    const pipeline = await Pipeline.findById(req.params.id);
+    if (!pipeline) {
+      return res.status(404).json({ success: false, error: 'Pipeline not found' });
+    }
+    
+    // Optionally delete associated files
+    const { deleteFiles = false } = req.query;
+    if (deleteFiles) {
+      try {
+        if (pipeline.script.filePath && fs.existsSync(pipeline.script.filePath)) {
+          await fs.unlink(pipeline.script.filePath);
+        }
+        if (pipeline.audio.filePath && fs.existsSync(pipeline.audio.filePath)) {
+          await fs.unlink(pipeline.audio.filePath);
+        }
+      } catch (fileError) {
+        logger.warn('Error deleting pipeline files:', fileError);
+      }
+    }
+    
+    await Pipeline.findByIdAndDelete(req.params.id);
+    
+    res.json({
+      success: true,
+      message: 'Pipeline deleted successfully'
+    });
+  } catch (error) {
+    logger.error('Error deleting pipeline:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/pipelines/stats/overview', async (req, res) => {
+  try {
+    const stats = await Pipeline.getAnalytics();
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    logger.error('Error fetching pipeline stats:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // Generate script endpoint
@@ -128,15 +240,21 @@ app.post('/api/generate-audio', ValidationMiddleware.validateAudioGeneration, as
         startTime: new Date(),
         lastUpdate: new Date(),
         result: null,
-        error: null
+        error: null,
+        message: null,
+        chunkIndex: null,
+        totalChunks: null
       };
       activeJobs.set(currentJobId, jobData);
 
       const sendProgress = (data) => {
-        // Update job tracking
+        // Update job tracking with detailed information
         jobData.lastUpdate = new Date();
         jobData.progress = data.progress || jobData.progress;
         jobData.status = data.type;
+        jobData.message = data.message;
+        jobData.chunkIndex = data.chunkIndex;
+        jobData.totalChunks = data.totalChunks;
 
         // Send to client with job ID
         const progressWithJobId = { ...data, jobId: currentJobId };
@@ -282,6 +400,9 @@ app.get('/api/job-status/:jobId', (req, res) => {
       completedAt: job.completedAt,
       result: job.result,
       error: job.error,
+      message: job.message,
+      chunkIndex: job.chunkIndex,
+      totalChunks: job.totalChunks,
       isComplete: job.status === 'complete' || job.status === 'error'
     }
   });
@@ -350,10 +471,13 @@ app.post('/api/script-to-audio', ValidationMiddleware.validateScriptToAudio, asy
       activeJobs.set(currentJobId, jobData);
 
       const sendProgress = (data) => {
-        // Update job tracking
+        // Update job tracking with detailed information
         jobData.lastUpdate = new Date();
         jobData.progress = data.progress || jobData.progress;
         jobData.status = data.type;
+        jobData.message = data.message;
+        jobData.chunkIndex = data.chunkIndex;
+        jobData.totalChunks = data.totalChunks;
 
         // Send to client with job ID
         const progressWithJobId = { ...data, jobId: currentJobId };
@@ -459,6 +583,58 @@ app.post('/api/script-to-audio', ValidationMiddleware.validateScriptToAudio, asy
         jobData.progress = 100;
         jobData.result = finalResult;
         jobData.completedAt = new Date();
+
+        // Save completed pipeline to database
+        try {
+          const pipelineData = new Pipeline({
+            // Generation parameters
+            topic,
+            duration: scriptOptions.duration,
+            style: scriptOptions.style,
+            audience: scriptOptions.audience,
+            tone: scriptOptions.tone,
+            format: scriptOptions.format,
+            voice: voice === 'default' ? 'default' : voice,
+            
+            // Generated script data
+            script: {
+              content: scriptData.content,
+              filePath: scriptData.filePath,
+              wordCount: scriptData.wordCount,
+              estimatedDuration: scriptData.estimatedDuration,
+              fileSize: fs.existsSync(scriptData.filePath) ? fs.statSync(scriptData.filePath).size : 0
+            },
+            
+            // Generated audio data
+            audio: {
+              filePath: audioResult.outputPath,
+              fileSize: audioResult.fileSize,
+              estimatedDuration: audioResult.estimatedDuration,
+              format: format,
+              fileName: path.basename(audioResult.outputPath)
+            },
+            
+            // Generation job metadata
+            jobId: currentJobId,
+            startTime: jobData.startTime,
+            completionTime: jobData.completedAt,
+            generationDuration: jobData.completedAt - jobData.startTime,
+            
+            // Initial status
+            status: 'completed',
+            tags: ['api-generated', 'pipeline']
+          });
+
+          await pipelineData.save();
+          logger.info(`Pipeline saved to database with ID: ${pipelineData._id}`);
+          
+          // Add database ID to final result
+          finalResult.pipelineId = pipelineData._id;
+          jobData.result = finalResult;
+        } catch (dbError) {
+          logger.error('Failed to save pipeline to database:', dbError);
+          // Continue without failing the request - database storage is optional
+        }
 
         sendProgress({
           type: 'complete',

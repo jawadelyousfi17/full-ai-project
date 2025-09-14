@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Bot, FileText, Volume2, Zap, Files, BarChart3, Wifi, WifiOff, Sparkles } from 'lucide-react';
+import { Bot, FileText, Volume2, Zap, Files, BarChart3, Wifi, WifiOff, Sparkles, History } from 'lucide-react';
 import ScriptGenerator from './components/ScriptGenerator';
 import AudioGenerator from './components/AudioGenerator';
 import PipelineGenerator from './components/PipelineGenerator';
 import FileManager from './components/FileManager';
+import PipelineHistory from './components/PipelineHistory';
 import { apiService } from './services/api';
 import { CssVarsProvider } from '@mui/joy/styles';
 import { 
@@ -56,6 +57,7 @@ function App() {
     { id: 'script', label: 'Script Generator', icon: FileText, component: ScriptGenerator },
     { id: 'audio', label: 'Audio Generator', icon: Volume2, component: AudioGenerator },
     { id: 'files', label: 'File Manager', icon: Files, component: FileManager },
+    { id: 'history', label: 'Pipeline History', icon: History, component: PipelineHistory },
   ];
 
   return (
