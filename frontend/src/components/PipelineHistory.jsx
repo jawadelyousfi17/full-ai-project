@@ -31,7 +31,7 @@ import {
   Schedule,
   AudioFile,
   Description,
-  CalendarToday
+  Event
 } from '@mui/icons-material';
 import { apiService } from '../services/api';
 
@@ -294,7 +294,7 @@ const PipelineHistory = () => {
                         </Typography>
                       </Stack>
                       <Stack direction="row" spacing={1} alignItems="center">
-                        <CalendarToday fontSize="small" />
+                        <Event fontSize="small" />
                         <Typography level="body-sm">{formatDate(pipeline.createdAt)}</Typography>
                       </Stack>
                     </Stack>
