@@ -13,26 +13,34 @@
     "api:dev": "node --watch src/api/server.js",
     "test": "jest"
   },
-  "keywords": ["ai", "video", "generation", "claude", "automation", "cli"],
+  "keywords": [
+    "ai",
+    "video",
+    "generation",
+    "claude",
+    "automation",
+    "cli"
+  ],
   "author": "Jawad",
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.3",
-    "commander": "^11.1.0",
-    "dotenv": "^16.3.1",
-    "chalk": "^4.1.2",
-    "ora": "^5.4.1",
-    "inquirer": "^8.2.6",
-    "fs-extra": "^11.1.1",
     "axios": "^1.6.0",
-    "mongoose": "^8.0.3",
-    "validator": "^13.11.0",
+    "chalk": "^4.1.2",
+    "commander": "^11.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "fs-extra": "^11.1.1",
+    "inquirer": "^8.2.6",
+    "mongoose": "^8.0.3",
+    "ora": "^5.4.1",
+    "validator": "^13.11.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "pm2": "^6.0.10"
   },
   "engines": {
     "node": ">=16.0.0"
