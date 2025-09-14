@@ -102,10 +102,10 @@ class ValidationMiddleware {
         field: 'text',
         message: 'Text must be a non-empty string'
       });
-    } else if (text && text.length > 50000) {
+    } else if (text && text.length > 200000) {
       errors.push({
         field: 'text',
-        message: 'Text must be less than 50,000 characters'
+        message: 'Text must be less than 200,000 characters'
       });
     }
 

@@ -211,7 +211,7 @@ app.post('/api/generate-audio', ValidationMiddleware.validateAudioGeneration, as
       file,
       format = 'mp3',
       voice,
-      chunkLength = 4000,
+      chunkLength = 2000,
       bitrate = 128000,
       latency = 'balanced',
       jobId = null

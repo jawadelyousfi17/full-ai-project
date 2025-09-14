@@ -18,7 +18,7 @@ class FishAudioService {
       referenceAudio = null,
       format = 'mp3',
       mp3Bitrate = 128,
-      chunkLength = 200,
+      chunkLength = 150,
       normalize = true,
       latency = 'normal',
       model = this.defaultModel
@@ -64,7 +64,7 @@ class FishAudioService {
           'model': model
         },
         responseType: 'stream',
-        timeout: 300000 // 5 minutes timeout for long audio
+        timeout: 1800000 // 30 minutes timeout for long audio
       });
 
       spinner.succeed('Audio generated successfully!');
@@ -75,10 +75,23 @@ class FishAudioService {
       
       if (error.response) {
         logger.error(`FishAudio API error (${error.response.status}):`, error.response.data);
+        
+        // Handle specific error cases for long text
+        if (error.response.status === 413) {
+          throw new Error(`Text too large for single request. Try reducing chunk size or splitting the text.`);
+        } else if (error.response.status === 429) {
+          throw new Error(`Rate limit exceeded. Please wait before making another request.`);
+        } else if (error.response.status === 500) {
+          throw new Error(`Server error processing audio. The text might be too complex or long.`);
+        }
+        
         throw new Error(`FishAudio API error: ${error.response.status} - ${error.response.statusText}`);
       } else if (error.request) {
         logger.error('Network error:', error.message);
         throw new Error(`Network error: ${error.message}`);
+      } else if (error.code === 'ECONNABORTED') {
+        logger.error('Request timeout:', error.message);
+        throw new Error(`Request timeout: Audio generation took too long. Try reducing text length or chunk size.`);
       } else {
         logger.error('Audio generation error:', error.message);
         throw error;
@@ -93,7 +106,7 @@ class FishAudioService {
       referenceId = null,
       referenceAudio = null,
       format = 'mp3',
-      chunkSize = 5000, // Split long scripts into chunks
+      chunkSize = 2000, // Split long scripts into chunks
       ...audioOptions
     } = options;
 
@@ -310,7 +323,7 @@ class FishAudioService {
       referenceId = null,
       referenceAudio = null,
       format = 'mp3',
-      chunkSize = 5000,
+      chunkSize = 2000,
       onProgress = null,
       ...audioOptions
     } = options;
