@@ -120,12 +120,13 @@ const AudioGenerator = () => {
     setResult(null);
     setCurrentStep(0);
 
-    const steps = [
-      'Preparing audio generation...',
-      'Processing text segments...',
-      'Generating audio chunks...',
-      'Finalizing audio output...'
-    ];
+    // Initialize with basic steps - will be updated by progress callbacks
+    setProgressSteps([
+      { label: 'Preparing audio generation...', status: 'pending' },
+      { label: 'Processing segments...', status: 'pending' },
+      { label: 'Generating audio...', status: 'pending' },
+      { label: 'Finalizing...', status: 'pending' }
+    ]);
 
     try {
       const audioData = {
@@ -151,7 +152,7 @@ const AudioGenerator = () => {
               { 
                 label: 'Starting audio generation...', 
                 status: 'active',
-                details: `Processing ${progressData.textLength} characters`
+                details: progressData.message || `Processing ${progressData.textLength || 'text'} characters`
               },
               { label: 'Processing segments...', status: 'pending' },
               { label: 'Generating audio...', status: 'pending' },
@@ -174,7 +175,7 @@ const AudioGenerator = () => {
               ...step,
               status: i < 2 ? 'complete' : i === 2 ? 'active' : 'pending',
               details: i === 2 ? 
-                `Generating segment ${progressData.chunkIndex + 1}/${progressData.totalChunks}: "${progressData.chunkPreview}"` : 
+                progressData.message || `Processing audio chunk ${progressData.chunkIndex + 1} of ${progressData.totalChunks}` : 
                 step.details
             })));
             break;
@@ -183,7 +184,28 @@ const AudioGenerator = () => {
             setProgressSteps(prev => prev.map((step, i) => ({
               ...step,
               details: i === 2 ? 
-                `Completed segment ${progressData.chunkIndex + 1}/${progressData.totalChunks} (${progressData.progress}%)` : 
+                progressData.message || `Completed audio chunk ${progressData.chunkIndex + 1} of ${progressData.totalChunks} (${progressData.progress}%)` : 
+                step.details
+            })));
+            break;
+
+          case 'single_chunk':
+            setCurrentStep(2);
+            setProgressSteps(prev => prev.map((step, i) => ({
+              ...step,
+              status: i < 2 ? 'complete' : i === 2 ? 'active' : 'pending',
+              details: i === 2 ? 
+                progressData.message || 'Generating audio (1 chunk)...' : 
+                step.details
+            })));
+            break;
+
+          case 'audio_progress':
+            // Handle generic audio progress updates
+            setProgressSteps(prev => prev.map((step, i) => ({
+              ...step,
+              details: i === 2 ? 
+                progressData.message || `Audio progress: ${progressData.progress || 0}%` : 
                 step.details
             })));
             break;
@@ -193,16 +215,18 @@ const AudioGenerator = () => {
             setProgressSteps(prev => prev.map((step, i) => ({
               ...step,
               status: i < 3 ? 'complete' : i === 3 ? 'active' : 'pending',
-              details: i === 3 ? 'Combining audio segments...' : step.details
+              details: i === 3 ? 
+                progressData.message || `Combining ${progressData.totalChunks || 'audio'} segments...` : 
+                step.details
             })));
             break;
 
-          case 'single_chunk':
-            setCurrentStep(2);
-            setProgressSteps(prev => prev.map((step, i) => ({
-              ...step,
-              status: i < 2 ? 'complete' : i === 2 ? 'active' : 'pending',
-              details: i === 2 ? `Generating audio: "${progressData.preview}"` : step.details
+          case 'complete':
+            setCurrentStep(4);
+            setProgressSteps(prev => prev.map(step => ({ 
+              ...step, 
+              status: 'complete',
+              details: step.details
             })));
             break;
         }
@@ -272,7 +296,7 @@ const AudioGenerator = () => {
             {/* Header */}
             <Stack direction="row" spacing={2} alignItems="center">
               <Box sx={{ p: 1.5, bgcolor: 'primary.100', borderRadius: 'md' }}>
-                <Volume2 size={24} className="text-blue-600" />
+                <Volume2 size={24} style={{ color: 'var(--joy-palette-primary-600)' }} />
               </Box>
               <Typography level="h3" sx={{ fontWeight: 700 }}>
                 Audio Generator
@@ -324,7 +348,7 @@ const AudioGenerator = () => {
                   size="lg"
                   disabled={loading || !formData.text.trim()}
                   loading={loading}
-                  startDecorator={loading ? <Loader2 size={20} className="animate-spin" /> : <Volume2 size={20} />}
+                  startDecorator={loading ? <Loader2 size={20} className="animate-spin" style={{ color: 'currentColor' }} /> : <Volume2 size={20} />}
                   sx={{ mt: 2 }}
                 >
                   {loading ? 'Generating Audio...' : 'Generate Audio'}

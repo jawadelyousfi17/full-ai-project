@@ -58,104 +58,135 @@ function App() {
     { id: 'files', label: 'File Manager', icon: Files, component: FileManager },
   ];
 
-  const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component;
-
   return (
     <CssVarsProvider theme={theme}>
-      <div className="min-h-screen" style={{ backgroundColor: theme.colorSchemes.light.palette.background.body }}>
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <Bot className="w-8 h-8 text-primary-600" />
-              <h1 className="text-xl font-bold text-gray-900">AI Video Generator</h1>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              {/* API Status */}
-              <div className="flex items-center gap-2">
-                {apiStatus === 'connected' ? (
-                  <>
-                    <Wifi className="w-4 h-4 text-green-500" />
-                    <span className="text-sm text-green-600">Connected</span>
-                  </>
-                ) : apiStatus === 'disconnected' ? (
-                  <>
-                    <WifiOff className="w-4 h-4 text-red-500" />
-                    <span className="text-sm text-red-600">Disconnected</span>
-                  </>
-                ) : (
-                  <span className="text-sm text-gray-500">Checking...</span>
-                )}
-              </div>
+      <Box sx={{ minHeight: '100vh', bgcolor: 'background.body' }}>
+        {/* Header */}
+        <Card variant="outlined" sx={{ borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}>
+          <CardContent>
+            <Container maxWidth="xl">
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 1 }}>
+                {/* Logo and Title */}
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Box sx={{ p: 1.5, bgcolor: 'primary.100', borderRadius: 'lg' }}>
+                    <Bot size={32} className="text-blue-600" />
+                  </Box>
+                  <Stack>
+                    <Typography level="h3" sx={{ fontWeight: 700, background: 'linear-gradient(45deg, #2563eb, #7c3aed)', backgroundClip: 'text', color: 'transparent' }}>
+                      AI Video Generator
+                    </Typography>
+                    <Typography level="body-sm" sx={{ color: 'text.secondary' }}>
+                      Create professional video content with AI
+                    </Typography>
+                  </Stack>
+                </Stack>
+                
+                {/* Status and Stats */}
+                <Stack direction="row" alignItems="center" spacing={3}>
+                  {/* API Status */}
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    {apiStatus === 'connected' ? (
+                      <>
+                        <Wifi size={16} style={{ color: 'var(--joy-palette-success-500)' }} />
+                        <Chip variant="soft" color="success" size="sm">Connected</Chip>
+                      </>
+                    ) : apiStatus === 'disconnected' ? (
+                      <>
+                        <WifiOff size={16} style={{ color: 'var(--joy-palette-danger-500)' }} />
+                        <Chip variant="soft" color="danger" size="sm">Disconnected</Chip>
+                      </>
+                    ) : (
+                      <Chip variant="soft" color="neutral" size="sm">Checking...</Chip>
+                    )}
+                  </Stack>
 
-              {/* Stats */}
-              {stats && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <BarChart3 className="w-4 h-4" />
-                  <span>{stats.totalScripts} scripts</span>
-                  <span>•</span>
-                  <span>{stats.totalAudio} audio</span>
-                  <span>•</span>
-                  <span>{stats.totalStorageUsed}</span>
-                </div>
+                  {/* Stats */}
+                  {stats && (
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <BarChart3 size={16} style={{ color: 'var(--joy-palette-text-secondary)' }} />
+                      <Typography level="body-sm" sx={{ color: 'text.secondary' }}>
+                        {stats.totalScripts} scripts • {stats.totalAudio} audio • {stats.totalStorageUsed}
+                      </Typography>
+                    </Stack>
+                  )}
+                </Stack>
+              </Stack>
+            </Container>
+          </CardContent>
+        </Card>
+
+        {/* Navigation */}
+        <Container maxWidth="xl" sx={{ mt: 2 }}>
+          <Tabs value={activeTab} onChange={(event, newValue) => setActiveTab(newValue)}>
+            <TabList
+              variant="soft"
+              sx={{
+                bgcolor: 'background.surface',
+                borderRadius: 'lg',
+                p: 0.5,
+                boxShadow: 'sm'
+              }}
+            >
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <Tab
+                    key={tab.id}
+                    value={tab.id}
+                    sx={{
+                      flexDirection: 'row',
+                      gap: 1,
+                      fontWeight: 600,
+                      '&[aria-selected="true"]': {
+                        bgcolor: 'primary.500',
+                        color: 'primary.50',
+                        '&:hover': {
+                          bgcolor: 'primary.600',
+                        }
+                      }
+                    }}
+                  >
+                    <Icon size={18} />
+                    {tab.label}
+                  </Tab>
+                );
+              })}
+            </TabList>
+
+            {/* Main Content */}
+            <Box sx={{ mt: 4 }}>
+              {apiStatus === 'disconnected' && (
+                <Alert color="danger" variant="soft" sx={{ mb: 3 }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <WifiOff size={20} />
+                    <Typography level="body-md">
+                      Unable to connect to the API server. Please ensure the backend is running on port 3000.
+                    </Typography>
+                  </Stack>
+                </Alert>
               )}
-            </div>
-          </div>
-        </div>
-      </header>
+              
+              {tabs.map((tab) => (
+                <TabPanel key={tab.id} value={tab.id} sx={{ p: 0 }}>
+                  <tab.component />
+                </TabPanel>
+              ))}
+            </Box>
+          </Tabs>
+        </Container>
 
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === tab.id
-                      ? 'border-primary-500 text-primary-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {apiStatus === 'disconnected' && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center gap-2">
-              <WifiOff className="w-5 h-5 text-red-500" />
-              <p className="text-red-800">
-                Unable to connect to the API server. Please ensure the backend is running on port 3000.
-              </p>
-            </div>
-          </div>
-        )}
-        
-        {ActiveComponent && <ActiveComponent />}
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="text-center text-sm text-gray-500">
-            <p>AI Video Generator - Powered by Claude AI & FishAudio</p>
-          </div>
-        </div>
-      </footer>
-      </div>
+        {/* Footer */}
+        <Box sx={{ mt: 8, py: 4, borderTop: 1, borderColor: 'divider' }}>
+          <Container maxWidth="xl">
+            <Stack direction="row" justifyContent="center" alignItems="center" spacing={1}>
+              <Sparkles size={16} style={{ color: 'var(--joy-palette-primary-500)' }} />
+              <Typography level="body-sm" sx={{ color: 'text.secondary' }}>
+                AI Video Generator - Powered by Claude AI & FishAudio
+              </Typography>
+            </Stack>
+          </Container>
+        </Box>
+      </Box>
     </CssVarsProvider>
   );
 }

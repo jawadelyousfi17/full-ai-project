@@ -93,7 +93,7 @@ class FishAudioService {
       referenceId = null,
       referenceAudio = null,
       format = 'mp3',
-      chunkSize = 4000, // Split long scripts into chunks
+      chunkSize = 5000, // Split long scripts into chunks
       ...audioOptions
     } = options;
 
@@ -186,7 +186,7 @@ class FishAudioService {
       referenceId = null,
       referenceAudio = null,
       format = 'mp3',
-      chunkSize = 4000,
+      chunkSize = 5000,
       onProgress = null,
       ...audioOptions
     } = options;
@@ -239,8 +239,11 @@ class FishAudioService {
       if (onProgress) {
         onProgress({
           type: 'single_chunk',
+          progress: 50,
+          totalChunks: 1,
+          chunkIndex: 0,
           preview: scriptContent.substring(0, 100) + (scriptContent.length > 100 ? '...' : ''),
-          message: 'Generating audio...'
+          message: 'Generating audio (1 chunk)...'
         });
       }
 
@@ -276,6 +279,16 @@ class FishAudioService {
               generatedAt: new Date()
             };
 
+            // Send completion progress for single chunk
+            if (onProgress) {
+              onProgress({
+                type: 'complete',
+                progress: 100,
+                totalChunks: 1,
+                message: 'Audio generation complete! (1 chunk)'
+              });
+            }
+
             resolve(result);
           } catch (error) {
             reject(error);
@@ -297,7 +310,7 @@ class FishAudioService {
       referenceId = null,
       referenceAudio = null,
       format = 'mp3',
-      chunkSize = 4000,
+      chunkSize = 5000,
       onProgress = null,
       ...audioOptions
     } = options;
@@ -328,7 +341,7 @@ class FishAudioService {
         const chunk = chunks[i];
         const tempPath = outputPath.replace(`.${format}`, `_chunk_${i}.${format}`);
         
-        spinner.text = `Generating segment ${i + 1}/${chunks.length}...`;
+        spinner.text = `Generating audio chunk ${i + 1}/${chunks.length}...`;
         
         if (onProgress) {
           onProgress({
@@ -336,7 +349,8 @@ class FishAudioService {
             chunkIndex: i,
             totalChunks: chunks.length,
             chunkPreview: chunk.substring(0, 100) + (chunk.length > 100 ? '...' : ''),
-            progress: Math.round((i / chunks.length) * 100)
+            progress: Math.round((i / chunks.length) * 100),
+            message: `Processing audio chunk ${i + 1} of ${chunks.length}`
           });
         }
         
@@ -364,7 +378,8 @@ class FishAudioService {
             type: 'chunk_complete',
             chunkIndex: i,
             totalChunks: chunks.length,
-            progress: Math.round(((i + 1) / chunks.length) * 90) // 90% for generation, 10% for combining
+            progress: Math.round(((i + 1) / chunks.length) * 90), // 90% for generation, 10% for combining
+            message: `Completed audio chunk ${i + 1} of ${chunks.length}`
           });
         }
       }
@@ -374,7 +389,8 @@ class FishAudioService {
       if (onProgress) {
         onProgress({
           type: 'combining',
-          message: 'Combining audio segments...'
+          progress: 90,
+          message: `Combining ${chunks.length} audio segments into final file...`
         });
       }
 
@@ -392,6 +408,15 @@ class FishAudioService {
       }
 
       spinner.succeed(`Generated long-form audio with ${chunks.length} segments!`);
+
+      if (onProgress) {
+        onProgress({
+          type: 'complete',
+          progress: 100,
+          message: `Audio generation complete! Generated ${chunks.length} chunks successfully.`,
+          totalChunks: chunks.length
+        });
+      }
 
       return {
         outputPath,

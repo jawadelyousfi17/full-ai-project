@@ -170,7 +170,7 @@ const FileManager = () => {
               justifyContent: 'center'
             }}
           >
-            <Icon size={20} className={iconColor} />
+            <Icon size={20} style={{ color: iconColor === 'text-blue-600' ? 'var(--joy-palette-primary-600)' : iconColor === 'text-green-600' ? 'var(--joy-palette-success-600)' : 'var(--joy-palette-neutral-500)' }} />
           </Box>
 
           {/* File Info */}
@@ -241,7 +241,7 @@ const FileManager = () => {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 6 }}>
         <Stack alignItems="center" spacing={2}>
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <Loader2 size={32} className="animate-spin" style={{ color: 'var(--joy-palette-primary-600)' }} />
           <Typography level="body-md" sx={{ color: 'text.secondary' }}>
             Loading your files...
           </Typography>
@@ -292,7 +292,7 @@ const FileManager = () => {
           <Box>
             <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
               <Box sx={{ p: 1.5, bgcolor: 'primary.100', borderRadius: 'lg' }}>
-                <Files size={28} className="text-blue-600" />
+                <Files size={28} style={{ color: 'var(--joy-palette-primary-600)' }} />
               </Box>
               <Typography level="h2" sx={{ fontWeight: 700 }}>
                 File Manager
@@ -345,7 +345,7 @@ const FileManager = () => {
                 mx: 'auto',
                 mb: 2
               }}>
-                <Files size={32} className="text-gray-400" />
+                <Files size={32} style={{ color: 'var(--joy-palette-neutral-400)' }} />
               </Box>
               <Typography level="title-lg" sx={{ mb: 1 }}>
                 No files yet
@@ -362,7 +362,7 @@ const FileManager = () => {
               <Box>
                 <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
                   <Box sx={{ p: 1, bgcolor: 'success.100', borderRadius: 'md' }}>
-                    <Volume2 size={20} className="text-green-600" />
+                    <Volume2 size={20} style={{ color: 'var(--joy-palette-success-600)' }} />
                   </Box>
                   <Typography level="title-lg" sx={{ fontWeight: 700 }}>
                     Audio Files ({sortedAudioFiles.length})
@@ -388,7 +388,7 @@ const FileManager = () => {
                 {sortedAudioFiles.length > 0 && <Divider sx={{ my: 2 }} />}
                 <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
                   <Box sx={{ p: 1, bgcolor: 'primary.100', borderRadius: 'md' }}>
-                    <FileText size={20} className="text-blue-600" />
+                    <FileText size={20} style={{ color: 'var(--joy-palette-primary-600)' }} />
                   </Box>
                   <Typography level="title-lg" sx={{ fontWeight: 700 }}>
                     Scripts ({sortedScriptFiles.length})

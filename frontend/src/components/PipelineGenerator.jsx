@@ -184,9 +184,23 @@ const PipelineGenerator = () => {
             break;
 
           case 'audio_progress':
+          case 'chunk_start':
+          case 'chunk_complete':
+          case 'single_chunk':
+          case 'combining':
             setProgressSteps(prev => prev.map((step, i) => ({
               ...step,
-              details: i === 2 ? `${progressData.message} (${progressData.progress}%)` : step.details
+              details: i === 2 ? 
+                progressData.message || `Audio progress: ${progressData.progress || 0}%` : 
+                step.details
+            })));
+            break;
+
+          case 'complete':
+            setCurrentStep(4);
+            setProgressSteps(prev => prev.map(step => ({ 
+              ...step, 
+              status: 'complete'
             })));
             break;
         }
@@ -286,7 +300,7 @@ const PipelineGenerator = () => {
             {/* Header */}
             <Stack direction="row" spacing={2} alignItems="center">
               <Box sx={{ p: 1.5, bgcolor: 'warning.100', borderRadius: 'lg' }}>
-                <Zap size={28} className="text-orange-600" />
+                <Zap size={28} style={{ color: 'var(--joy-palette-warning-600)' }} />
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Stack direction="row" alignItems="center" spacing={2}>
@@ -446,7 +460,7 @@ const PipelineGenerator = () => {
                   size="lg"
                   disabled={loading || !formData.topic.trim()}
                   loading={loading}
-                  startDecorator={loading ? <Loader2 size={20} className="animate-spin" /> : <Zap size={20} />}
+                  startDecorator={loading ? <Loader2 size={20} className="animate-spin" style={{ color: 'currentColor' }} /> : <Zap size={20} />}
                   sx={{ 
                     mt: 2,
                     background: 'linear-gradient(45deg, #FF6B35, #F7931E)',

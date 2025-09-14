@@ -114,6 +114,15 @@ const ProgressIndicator = ({
                             {step.description}
                           </Typography>
                         )}
+                        {step.details && (
+                          <Typography level="body-xs" sx={{ 
+                            color: stepStatus === 'active' ? 'primary.600' : 'text.tertiary', 
+                            mt: 0.5,
+                            fontFamily: 'monospace'
+                          }}>
+                            {step.details}
+                          </Typography>
+                        )}
                         {index === currentStep && status === 'error' && error && (
                           <Alert color="danger" variant="soft" size="sm" sx={{ mt: 1 }}>
                             <Typography level="body-sm">

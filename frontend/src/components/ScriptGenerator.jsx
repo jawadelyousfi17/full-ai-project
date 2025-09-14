@@ -107,7 +107,7 @@ const ScriptGenerator = () => {
             {/* Header */}
             <Stack direction="row" spacing={2} alignItems="center">
               <Box sx={{ p: 1.5, bgcolor: 'primary.100', borderRadius: 'lg' }}>
-                <FileText size={28} className="text-blue-600" />
+                <FileText size={28} style={{ color: 'var(--joy-palette-primary-600)' }} />
               </Box>
               <Box>
                 <Typography level="h2" sx={{ fontWeight: 700, mb: 0.5 }}>
@@ -217,7 +217,7 @@ const ScriptGenerator = () => {
                   size="lg"
                   disabled={loading || !formData.topic.trim()}
                   loading={loading}
-                  startDecorator={loading ? <Loader2 size={20} className="animate-spin" /> : <FileText size={20} />}
+                  startDecorator={loading ? <Loader2 size={20} className="animate-spin" style={{ color: 'currentColor' }} /> : <FileText size={20} />}
                   sx={{ mt: 2 }}
                 >
                   {loading ? 'Generating Script...' : 'Generate Script'}
