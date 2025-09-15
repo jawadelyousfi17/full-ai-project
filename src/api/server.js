@@ -905,23 +905,20 @@ app.delete('/api/delete/:type/:filename', ValidationMiddleware.validateFileOpera
 });
 
 // Get available voices endpoint
-app.get('/api/voices', (req, res) => {
+app.get('/api/voices', async (req, res) => {
   try {
-    // For now, return the default voice configuration
-    // This could be expanded to query FishAudio API for available voices
+    const voices = await fishAudio.listAvailableVoices();
+    
     res.json({
       success: true,
       data: {
-        voices: [
-          {
-            id: '090623498e9843068d8507db5a700f90',
-            name: 'Custom Voice',
-            description: 'High-quality custom voice model',
-            language: 'en',
-            gender: 'neutral'
-          }
-        ],
-        default: '090623498e9843068d8507db5a700f90'
+        voices: voices.defaultVoices.map(voice => ({
+          id: voice.id,
+          name: voice.name,
+          language: voice.language,
+          description: `${voice.name} voice model`
+        })),
+        default: 'default'
       }
     });
   } catch (error) {

@@ -10,14 +10,35 @@ const AudioGenerator = () => {
   const [formData, setFormData] = useState({
     text: '',
     format: 'mp3',
-    voice: '090623498e9843068d8507db5a700f90'
+    voice: 'default'
   });
+  const [voices, setVoices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
   const [progress, setProgress] = useState({ step: 0, status: 'idle' });
   const [currentStep, setCurrentStep] = useState(0);
   const [progressSteps, setProgressSteps] = useState([]);
+
+  // Fetch available voices on component mount
+  useEffect(() => {
+    const fetchVoices = async () => {
+      try {
+        const voicesData = await apiService.getVoices();
+        if (voicesData.success && voicesData.data.voices) {
+          setVoices(voicesData.data.voices);
+          // Set default voice if available
+          if (voicesData.data.default) {
+            setFormData(prev => ({ ...prev, voice: voicesData.data.default }));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch voices:', error);
+      }
+    };
+    
+    fetchVoices();
+  }, []);
 
   // Check for existing job on component mount
   useEffect(() => {
@@ -419,7 +440,11 @@ const AudioGenerator = () => {
                       value={formData.voice}
                       onChange={(e, value) => setFormData({ ...formData, voice: value })}
                     >
-                      <Option value="090623498e9843068d8507db5a700f90">Custom Voice (Default)</Option>
+                      {voices.map((voice) => (
+                        <Option key={voice.id} value={voice.id}>
+                          {voice.name}
+                        </Option>
+                      ))}
                     </Select>
                   </FormControl>
                 </Stack>

@@ -510,13 +510,11 @@ class FishAudioService {
 
   async listAvailableVoices() {
     // This would require additional API endpoints for voice listing
-    // For now, return common reference IDs or allow custom ones
+    // For now, return available voice reference IDs
     return {
       defaultVoices: [
-        { id: 'default', name: 'Default Voice', language: 'en' },
-        { id: 'speech-1.5', name: 'Speech Model 1.5', language: 'multi' },
-        { id: 'speech-1.6', name: 'Speech Model 1.6', language: 'multi' },
-        { id: 's1', name: 'S1 Model', language: 'multi' }
+        { id: 'default', name: 'UK Story Teller', language: 'en' },
+        { id: '2ab5dc31df0b4578a694283b304c79ae', name: 'philosofr', language: 'en' }
       ],
       customVoices: 'Use reference_id from Fish Audio playground or upload custom reference audio'
     };
