@@ -388,9 +388,14 @@ app.get('/api/job-status/:jobId', (req, res) => {
   const job = activeJobs.get(jobId);
 
   if (!job) {
-    return res.status(404).json({ 
-      error: 'Job not found',
-      message: 'Job may have expired or never existed'
+    return res.json({ 
+      success: true,
+      data: {
+        id: jobId,
+        status: 'not_found',
+        isComplete: true,
+        message: 'Job not found - may have completed or expired'
+      }
     });
   }
 

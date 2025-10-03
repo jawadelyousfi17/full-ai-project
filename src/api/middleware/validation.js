@@ -166,7 +166,7 @@ class ValidationMiddleware {
     }
 
     // Voice validation (basic format check)
-    if (voice && (typeof voice !== 'string' || voice.length < 10)) {
+    if (voice && (typeof voice !== 'string' || voice.length < 3)) {
       errors.push({
         field: 'voice',
         message: 'Voice must be a valid voice ID string'

@@ -71,21 +71,32 @@ class FishAudioService {
       return response.data;
 
     } catch (error) {
-      spinner.fail('Failed to generate audio');
+      const status = error.response?.status;
+      
+      // Check if we should retry (server errors)
+      if (attempt < maxRetries && (status === 500 || status === 502 || status === 503 || status === 504)) {
+        const delay = Math.pow(2, attempt - 1) * 1000; // Exponential backoff
+        logger.warn(`Server error ${status}, retrying in ${delay}ms... (attempt ${attempt}/${maxRetries})`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return await this.generateAudioWithRetry(text, options, attempt + 1);
+      }
+      
+      spinner.fail(`Failed to generate audio (attempt ${attempt}/${maxRetries})`);
       
       if (error.response) {
-        logger.error(`FishAudio API error (${error.response.status}):`, error.response.data);
+        logger.error(`FishAudio API error (${status}):`, error.response.data);
         
-        // Handle specific error cases for long text
-        if (error.response.status === 413) {
+        // Handle specific error cases
+        if (status === 413) {
           throw new Error(`Text too large for single request. Try reducing chunk size or splitting the text.`);
-        } else if (error.response.status === 429) {
+        } else if (status === 429) {
           throw new Error(`Rate limit exceeded. Please wait before making another request.`);
-        } else if (error.response.status === 500) {
-          throw new Error(`Server error processing audio. The text might be too complex or long.`);
+        } else if (status === 500 || status === 502 || status === 503 || status === 504) {
+          throw new Error(`Fish Audio server error (${status}). This is a temporary issue with their service. Please try again later.`);
         }
         
-        throw new Error(`FishAudio API error: ${error.response.status} - ${error.response.statusText}`);
+        throw new Error(`FishAudio API error: ${status} - ${error.response.statusText}`);
       } else if (error.request) {
         logger.error('Network error:', error.message);
         throw new Error(`Network error: ${error.message}`);
@@ -455,7 +466,7 @@ class FishAudioService {
     }
   }
 
-  splitTextIntoChunks(text, chunkSize, overlapSize = 200) {
+  splitTextIntoChunks(text, chunkSize, overlapSize = 0) {
     const sentences = text.match(/[^\.!?]+[\.!?]+/g) || [text];
     const chunks = [];
     let currentChunk = '';
@@ -464,10 +475,8 @@ class FishAudioService {
       if (currentChunk.length + sentence.length > chunkSize && currentChunk.length > 0) {
         chunks.push(currentChunk.trim());
         
-        // Add overlap from the end of current chunk
-        const words = currentChunk.split(/\s+/);
-        const overlapWords = words.slice(-Math.floor(overlapSize / 10)); // Approximate word overlap
-        currentChunk = overlapWords.join(' ') + ' ' + sentence;
+        // Start new chunk without overlap to prevent word repetition
+        currentChunk = sentence;
       } else {
         currentChunk += sentence;
       }
@@ -514,7 +523,8 @@ class FishAudioService {
     return {
       defaultVoices: [
         { id: 'default', name: 'UK Story Teller', language: 'en' },
-        { id: '2ab5dc31df0b4578a694283b304c79ae', name: 'philosofr', language: 'en' }
+        { id: '2ab5dc31df0b4578a694283b304c79ae', name: 'philosofr', language: 'en' },
+        { id: '5b05c2a7ad0c4e0f84eca59b4cbd31fd', name: 'Story eman', language: 'en' }
       ],
       customVoices: 'Use reference_id from Fish Audio playground or upload custom reference audio'
     };
