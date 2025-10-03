@@ -525,7 +525,8 @@ class FishAudioService {
         { id: 'default', name: 'UK Story Teller', language: 'en' },
         { id: '2ab5dc31df0b4578a694283b304c79ae', name: 'philosofr', language: 'en' },
         { id: '5b05c2a7ad0c4e0f84eca59b4cbd31fd', name: 'Story eman', language: 'en' },
-        { id: '2c4a34e7998e472e995c48622f19eb50', name: 'PHILO-STORY-TELLER', language: 'en' }
+        { id: '2c4a34e7998e472e995c48622f19eb50', name: 'PHILO-STORY-TELLER', language: 'en' },
+        { id: '2172a2d99dcb49b5941e5bbd457617d5', name: '11 labs PHILO', language: 'en' }
       ],
       customVoices: 'Use reference_id from Fish Audio playground or upload custom reference audio'
     };
